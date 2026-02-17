@@ -1,0 +1,112 @@
+###############################################################################
+# NKP S3 Gallery — Complete Kubernetes Deployment
+#
+# INSTRUCTIONS:
+#   1. Edit the Secret below with your NUS S3 credentials (4 values)
+#   2. Update the Deployment image to your container registry
+#   3. kubectl apply -f deploy.yaml
+#   4. Access at http://<any-node-ip>:30080
+###############################################################################
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nkp-gallery-demo
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-credentials
+  namespace: nkp-gallery-demo
+type: Opaque
+stringData:
+  S3_ENDPOINT: "https://your-nus-endpoint.example.com"   # <-- EDIT THIS
+  S3_ACCESS_KEY: "your-access-key"                        # <-- EDIT THIS
+  S3_SECRET_KEY: "your-secret-key"                        # <-- EDIT THIS
+  S3_BUCKET: "nkp-gallery-demo"                           # <-- EDIT THIS
+  S3_REGION: "us-east-1"
+  S3_VERIFY_SSL: "false"
+  IMAGE_PROXY: "true"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gallery-app
+  namespace: nkp-gallery-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gallery-app
+  template:
+    metadata:
+      labels:
+        app: gallery-app
+    spec:
+      containers:
+        - name: gallery-app
+          image: ghcr.io/icediceice/nkp-s3-gallery:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: s3-credentials
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gallery-app
+  namespace: nkp-gallery-demo
+spec:
+  type: NodePort
+  selector:
+    app: gallery-app
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080
+
+# ---
+# # Optional: Uncomment if you have an Ingress Controller configured
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: gallery-app
+#   namespace: nkp-gallery-demo
+#   annotations:
+#     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+# spec:
+#   rules:
+#     - host: gallery.example.com
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: gallery-app
+#                 port:
+#                   number: 80
