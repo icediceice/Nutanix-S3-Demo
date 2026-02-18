@@ -22,7 +22,7 @@ metadata:
   namespace: nkp-gallery-demo
 type: Opaque
 stringData:
-  S3_ENDPOINT: "10.8.21.8"   # <-- EDIT THIS
+  S3_ENDPOINT: "http://10.8.21.8"   # <-- EDIT THIS
   S3_ACCESS_KEY: "7s7nuGMrrjIF5-wAPIzDYRBTNm0f-Ggi"                        # <-- EDIT THIS
   S3_SECRET_KEY: "VKjMW8XLQeLePNUvqaE-UhO7Mj8kZNNo"                        # <-- EDIT THIS
   S3_BUCKET: "nkp-gallery-demo"                           # <-- EDIT THIS
